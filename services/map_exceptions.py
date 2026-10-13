@@ -55,7 +55,11 @@ def add_french_guiana_borders(border_map):
     if missing:
         raise ValueError(f"Missing French Guiana neighbor(s) in border map: {missing}")
 
+    changed = border_map.get("French Guiana") != list(neighbors)
     border_map["French Guiana"] = list(neighbors)
     for country in neighbors:
-        border_map[country] = sorted(set(border_map[country]) | {"French Guiana"})
-    return border_map
+        updated_neighbors = sorted(set(border_map[country]) | {"French Guiana"})
+        if border_map[country] != updated_neighbors:
+            border_map[country] = updated_neighbors
+            changed = True
+    return changed

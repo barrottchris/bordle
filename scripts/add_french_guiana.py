@@ -14,9 +14,6 @@ from shapely.geometry import mapping, shape
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from services.map_exceptions import add_french_guiana_borders, split_french_guiana
-
-
 SOURCE_PATH = ROOT / "data/countries.geojson"
 SHAPE_ASSETS = (
     (ROOT / "data/countries_shapes.json", "name"),
@@ -29,6 +26,8 @@ COUNTRY_CODE_PATH = ROOT / "static/map_data/iso_country_codes.json"
 
 
 def _load_source_geometry():
+    from services.map_exceptions import split_french_guiana
+
     source = json.loads(SOURCE_PATH.read_text(encoding="utf-8"))
     france = next(
         feature
@@ -42,6 +41,8 @@ def _load_source_geometry():
 
 
 def _separate_feature(data, name_property, geometry, properties):
+    from services.map_exceptions import split_french_guiana
+
     existing_features = [
         feature
         for feature in data["features"]
@@ -69,22 +70,43 @@ def _separate_feature(data, name_property, geometry, properties):
     remaining_france, embedded_guiana = split_french_guiana(
         shape(france["geometry"])
     )
+    changed = False
     if embedded_guiana is not None:
         geometry = embedded_guiana
-        france["geometry"] = mapping(remaining_france)
+        if not shape(france["geometry"]).equals(remaining_france):
+            france["geometry"] = mapping(remaining_france)
+            changed = True
     elif existing_geometry is not None:
         geometry = existing_geometry
 
     feature_properties = dict(properties)
     feature_properties[name_property] = "French Guiana"
-    data["features"].append(
-        {"type": "Feature", "properties": feature_properties, "geometry": mapping(geometry)}
-    )
+    feature_geometry = mapping(geometry)
+    if existing_features:
+        existing_feature = existing_features[0]
+        if (
+            existing_feature["properties"] != feature_properties
+            or not shape(existing_feature["geometry"]).equals(geometry)
+        ):
+            existing_feature["properties"] = feature_properties
+            existing_feature["geometry"] = feature_geometry
+            changed = True
+        data["features"].append(existing_feature)
+    else:
+        data["features"].append(
+            {
+                "type": "Feature",
+                "properties": feature_properties,
+                "geometry": feature_geometry,
+            }
+        )
+        changed = True
+    return changed
 
 
 def _write_shape_asset(path, name_property, french_guiana):
     data = json.loads(path.read_text(encoding="utf-8"))
-    _separate_feature(
+    changed = _separate_feature(
         data,
         name_property,
         french_guiana,
@@ -93,38 +115,48 @@ def _write_shape_asset(path, name_property, french_guiana):
             "ISO3166-1-Alpha-2": "GF",
         },
     )
-    path.write_text(
-        json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n",
-        encoding="utf-8",
-    )
+    if changed:
+        path.write_text(
+            json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+    return changed
 
 
 def _write_outline_asset(path, french_guiana):
     data = json.loads(path.read_text(encoding="utf-8"))
-    _separate_feature(data, "ADMIN", french_guiana, {})
-    path.write_text(
-        json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n",
-        encoding="utf-8",
-    )
+    changed = _separate_feature(data, "ADMIN", french_guiana, {})
+    if changed:
+        path.write_text(
+            json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+    return changed
 
 
 def main():
+    from services.map_exceptions import add_french_guiana_borders
+
     french_guiana = _load_source_geometry()
     for path, name_property in SHAPE_ASSETS:
-        _write_shape_asset(path, name_property, french_guiana)
-        print(f"Updated {path.relative_to(ROOT)}")
+        changed = _write_shape_asset(path, name_property, french_guiana)
+        print(f"{'Updated' if changed else 'Already current'} {path.relative_to(ROOT)}")
 
-    _write_outline_asset(OUTLINE_PATH, french_guiana)
-    print(f"Updated {OUTLINE_PATH.relative_to(ROOT)}")
+    changed = _write_outline_asset(OUTLINE_PATH, french_guiana)
+    print(f"{'Updated' if changed else 'Already current'} {OUTLINE_PATH.relative_to(ROOT)}")
 
     border_map = json.loads(BORDER_MAP_PATH.read_text(encoding="utf-8"))
-    add_french_guiana_borders(border_map)
-    BORDER_MAP_PATH.write_text(json.dumps(border_map, indent=2) + "\n", encoding="utf-8")
+    if add_french_guiana_borders(border_map):
+        BORDER_MAP_PATH.write_text(
+            json.dumps(border_map, indent=2) + "\n", encoding="utf-8"
+        )
 
     dropdown = json.loads(DROPDOWN_PATH.read_text(encoding="utf-8"))
     if "French Guiana" not in dropdown:
         dropdown.append("French Guiana")
-    DROPDOWN_PATH.write_text(json.dumps(dropdown, indent=2) + "\n", encoding="utf-8")
+        DROPDOWN_PATH.write_text(
+            json.dumps(dropdown, indent=2) + "\n", encoding="utf-8"
+        )
 
     country_codes = json.loads(COUNTRY_CODE_PATH.read_text(encoding="utf-8"))
     if country_codes.get("French Guiana") != "GF":
