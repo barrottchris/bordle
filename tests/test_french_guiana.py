@@ -68,6 +68,13 @@ def test_game_shape_loader_resolves_french_guiana():
     assert shape(feature["geometry"]).covers(FRENCH_GUIANA_POINT)
 
 
+def test_game_shape_loader_returns_ukraine_with_crimea():
+    feature = get_country_shape("Ukraine")
+
+    assert feature is not None
+    assert shape(feature["geometry"]).covers(Point(34.1, 45.0))
+
+
 def test_game_logic_loads_french_guiana_as_a_selectable_guess():
     assert "French Guiana" in all_country_options
     assert "French Guiana" in _borderable_countries
