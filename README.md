@@ -9,7 +9,7 @@
 ## 🎮 Features
 
 - Interactive daily geography challenge
-- Random UN-recognized country each day (out of 195)
+- Follows the UN-recognized country list, with Kosovo and French Guiana included as exceptions to avoid obvious gaps in the map
 - Guess bordering countries with dropdown assistance
 - Visual map feedback for correct and incorrect guesses
 - Hard mode that hides the name of the main country
@@ -60,7 +60,7 @@ Country outlines are sourced from Natural Earth.
 
 Border data is computed from spatial overlaps using GeoPandas.
 
-Only UN-recognized countries are included (195 total).
+The map follows the UN-recognized country list, with Kosovo and French Guiana included as exceptions to avoid obvious gaps.
 
 ---
 

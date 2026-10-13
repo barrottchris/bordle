@@ -114,6 +114,7 @@
     "Argentina",
     "Bolivia",
     "Colombia",
+    "French Guiana",
     "Guyana",
     "Paraguay",
     "Peru",
@@ -786,6 +787,7 @@
   ],
   "Suriname": [
     "Brazil",
+    "French Guiana",
     "Guyana"
   ],
   "Sweden": [
@@ -928,5 +930,9 @@
   "Eswatini": [
     "Mozambique",
     "South Africa"
+  ],
+  "French Guiana": [
+    "Brazil",
+    "Suriname"
   ]
 }
