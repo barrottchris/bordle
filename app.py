@@ -335,8 +335,18 @@ def reset_session():
 
 @app.route("/leaderboard_data")
 def leaderboard_data():
+    raw_limit = request.args.get("limit", "300")
+    normalized = str(raw_limit).strip().lower() if raw_limit is not None else ""
+    if normalized in {"", "all", "null"}:
+        limit = 300
+    else:
+        try:
+            limit = max(1, int(raw_limit))
+        except ValueError:
+            limit = 300
+
     try:
-        data = get_leaderboard_data()
+        data = get_leaderboard_data(limit)
         return jsonify(data)
     except Exception as e:
         logger.warning(f"Error loading leaderboard data: {e}")
@@ -345,7 +355,16 @@ def leaderboard_data():
 
 @app.route("/api/leaderboard")
 def leaderboard_api():
-    return jsonify(get_leaderboard_data())
+    raw_limit = request.args.get("limit", "300")
+    normalized = str(raw_limit).strip().lower() if raw_limit is not None else ""
+    if normalized in {"", "all", "null"}:
+        limit = 300
+    else:
+        try:
+            limit = max(1, int(raw_limit))
+        except ValueError:
+            limit = 300
+    return jsonify(get_leaderboard_data(limit))
 
 
 @app.route("/sitemap.xml")

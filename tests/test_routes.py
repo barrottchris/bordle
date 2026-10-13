@@ -184,6 +184,24 @@ class TestApiPlayerStats:
         assert resp.status_code == 404
 
 
+# ── /leaderboard_data ─────────────────────────────────────────────────────────
+
+class TestLeaderboardDataRoute:
+    def test_passes_limit_parameter_to_backend(self, client):
+        with patch("app.get_leaderboard_data", return_value={"daily": [], "all_time": []}) as mock_get:
+            resp = client.get("/leaderboard_data?limit=all")
+        assert resp.status_code == 200
+        assert mock_get.call_count == 1
+        assert mock_get.call_args.args[0] == 300
+
+    def test_passes_numeric_limit_to_backend(self, client):
+        with patch("app.get_leaderboard_data", return_value={"daily": [], "all_time": []}) as mock_get:
+            resp = client.get("/leaderboard_data?limit=7")
+        assert resp.status_code == 200
+        assert mock_get.call_count == 1
+        assert mock_get.call_args.args[0] == 7
+
+
 # ── /reset ─────────────────────────────────────────────────────────────────────
 
 class TestReset:

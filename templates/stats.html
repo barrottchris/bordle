@@ -92,6 +92,11 @@
       <tr><td colspan="4" class="py-2 px-4 text-center text-gray-500">Loading...</td></tr>
     </tbody>
   </table>
+  <div class="mt-3 text-center">
+    <button type="button" data-leaderboard-table="daily" class="toggle-full-leaderboard bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors">
+      Show all countries
+    </button>
+  </div>
 </div>
 
 <br>
@@ -113,12 +118,37 @@
       <tr><td colspan="4" class="py-2 px-4 text-center text-gray-500">Loading...</td></tr>
     </tbody>
   </table>
+  <div class="mt-3 text-center">
+    <button type="button" data-leaderboard-table="all_time" class="toggle-full-leaderboard bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors">
+      Show all countries
+    </button>
+  </div>
 </div>
 
 
 <script>
-  async function loadLeaderboardData() {
+  const leaderboardLimitState = {
+    daily: "10",
+    all_time: "10",
+  };
 
+  function renderRows(body, rows, emptyText) {
+    if (!rows?.length) {
+      body.innerHTML = `<tr><td colspan="4" class="text-center py-2 text-gray-500">${emptyText}</td></tr>`;
+      return;
+    }
+
+    body.innerHTML = rows.map((row, index) => `
+      <tr class="border-t border-gray-200">
+        <td class="py-2 px-3 text-center">${index + 1}</td>
+        <td class="py-2 px-4">${row.country || "Unknown"}</td>
+        <td class="py-2 px-4 text-right">${(row.success_rate ?? 0).toFixed(0)}%</td>
+        <td class="py-2 px-4 text-right">${row.total_guesses ?? 0}</td>
+      </tr>
+    `).join("");
+  }
+
+  async function loadLeaderboardData(tableKey = null) {
     const dailyBody = document.getElementById("dailyLeaderboardBody");
     const allTimeBody = document.getElementById("allTimeLeaderboardBody");
 
@@ -128,36 +158,52 @@
     }
 
     try {
-      const response = await fetch("/leaderboard_data", { cache: "no-cache" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
+      if (tableKey === "daily" || tableKey === null) {
+        const dailyLimit = leaderboardLimitState.daily === "all" ? "300" : leaderboardLimitState.daily;
+        const dailyResponse = await fetch(`/leaderboard_data?limit=${dailyLimit}`, { cache: "no-cache" });
+        if (!dailyResponse.ok) throw new Error(`HTTP ${dailyResponse.status}`);
+        const dailyData = await dailyResponse.json();
+        renderRows(dailyBody, dailyData.daily, "No data today");
+      }
 
-      dailyBody.innerHTML = data.daily?.length
-        ? data.daily.map(row => `
-            <tr class="border-t border-gray-200">
-              <td class="py-2 px-3 text-center">${data.daily.indexOf(row) + 1}</td>
-              <td class="py-2 px-4">${row.country || "Unknown"}</td>
-              <td class="py-2 px-4 text-right">${(row.success_rate ?? 0).toFixed(0)}%</td>
-              <td class="py-2 px-4 text-right">${row.total_guesses ?? 0}</td>
-            </tr>
-          `).join("")
-        : `<tr><td colspan="4" class="text-center py-2 text-gray-500">No data today</td></tr>`;
-
-      allTimeBody.innerHTML = data.all_time?.length
-        ? data.all_time.map(row => `
-            <tr class="border-t border-gray-200">
-              <td class="py-2 px-3 text-center">${data.all_time.indexOf(row) + 1}</td>
-              <td class="py-2 px-4">${row.country || "Unknown"}</td>
-              <td class="py-2 px-4 text-right">${(row.success_rate ?? 0).toFixed(0)}%</td>
-              <td class="py-2 px-4 text-right">${row.total_guesses ?? 0}</td>
-            </tr>
-          `).join("")
-        : `<tr><td colspan="4" class="text-center py-2 text-gray-500">No all-time data</td></tr>`;
-
+      if (tableKey === "all_time" || tableKey === null) {
+        const allTimeLimit = leaderboardLimitState.all_time === "all" ? "300" : leaderboardLimitState.all_time;
+        const allTimeResponse = await fetch(`/leaderboard_data?limit=${allTimeLimit}`, { cache: "no-cache" });
+        if (!allTimeResponse.ok) throw new Error(`HTTP ${allTimeResponse.status}`);
+        const allTimeData = await allTimeResponse.json();
+        renderRows(allTimeBody, allTimeData.all_time, "No all-time data");
+      }
     } catch (err) {
       console.error("[Stats Page] Error loading leaderboard data:", err);
     }
   }
+
+  function updateLeaderboardToggleButtons() {
+    document.querySelectorAll(".toggle-full-leaderboard").forEach((button) => {
+      const tableKey = button.dataset.leaderboardTable;
+      const isExpanded = leaderboardLimitState[tableKey] === "all";
+      button.textContent = isExpanded ? "Show top 10 countries" : "Show all countries";
+      button.dataset.expanded = String(isExpanded);
+    });
+  }
+
+  async function toggleLeaderboard(tableKey, event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    leaderboardLimitState[tableKey] = leaderboardLimitState[tableKey] === "all" ? "10" : "all";
+    updateLeaderboardToggleButtons();
+    await loadLeaderboardData(tableKey);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".toggle-full-leaderboard").forEach((button) => {
+      button.addEventListener("click", (event) => toggleLeaderboard(button.dataset.leaderboardTable, event));
+    });
+    updateLeaderboardToggleButtons();
+  });
 
   function showLocalStats() {
     const stats = JSON.parse(localStorage.getItem("bordleStats"));
