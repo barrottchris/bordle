@@ -4,7 +4,9 @@ from pathlib import Path
 import pytest
 from shapely.geometry import Point, shape
 
+from services.game_db_logic import _borderable_countries
 from services.game_get_data import get_country_shape
+from services.game_logic import all_country_options
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,3 +66,8 @@ def test_game_shape_loader_resolves_french_guiana():
     assert feature is not None
     assert feature["properties"]["name"] == "French Guiana"
     assert shape(feature["geometry"]).covers(FRENCH_GUIANA_POINT)
+
+
+def test_game_logic_loads_french_guiana_as_a_selectable_guess():
+    assert "French Guiana" in all_country_options
+    assert "French Guiana" in _borderable_countries

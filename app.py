@@ -17,6 +17,11 @@ from flask import (
     url_for,
     session,
 )
+from scripts.map_data_bootstrap import MAP_DATA_READY
+
+if not MAP_DATA_READY:
+    raise RuntimeError("Map data preparation did not complete before app startup")
+
 from services.game_cache import daily_game_cache
 from services.game_db_logic import (
     get_games_today_stats,

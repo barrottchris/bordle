@@ -17,6 +17,7 @@ def main():
 
     assign_crimea_to_ukraine()
     add_french_guiana()
+    return True
 
 
 if __name__ == "__main__":

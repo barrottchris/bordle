@@ -57,7 +57,7 @@ Then navigate to http://127.0.0.1:5000 in your browser.
 
 ### Deployment startup
 
-Configure your hosting provider's start command as `sh scripts/start_app.sh` (after its normal dependency-install/build step). The entrypoint reapplies the Crimea and French Guiana map exceptions, then starts Gunicorn. This runs once before the app imports and caches map data, does not require the ignored Natural Earth shapefile download, and leaves already-current map files untouched.
+The app reapplies the Crimea and French Guiana map exceptions automatically before importing services that cache map data, so the existing Render `gunicorn app:app` start command also works. Alternatively, configure the start command as `sh scripts/start_app.sh` to run the generation step explicitly before Gunicorn. Both approaches use the committed GeoJSON files, do not require the ignored Natural Earth shapefile download, and leave already-current map files untouched.
 
 🗺️ Data Sources
 Country outlines are sourced from Natural Earth.
