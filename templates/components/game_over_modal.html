@@ -116,12 +116,7 @@
 
     // Map rendering
     const map = L.map('failureMap');
-    L.tileLayer('https://api.maptiler.com/maps/basic-v2/256/{z}/{x}/{y}.png?key=shOVlsPI8fhJlEek08rF', {
-      attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> contributors',
-      tileSize: 256,
-      zoomOffset: 0,
-      zoom: 1.5
-    }).addTo(map);
+    document.getElementById('failureMap').style.backgroundColor = '#dce8f1';
 
     const mainCountry = {{ country_geojson | tojson }};
     const correctShapes = {{ correct_shapes | tojson }};
@@ -131,12 +126,63 @@
     const correctStyle = { color: "green", weight: 1, fillOpacity: 0.5 };
     const wrongStyle = { color: "red", weight: 1, fillOpacity: 0.5 };
 
-    const mainLayer = L.geoJSON(mainCountry, { style: mainStyle }).addTo(map);
-    map.fitBounds(mainLayer.getBounds());
-    map.setZoom(map.getZoom() - 1);
+    async function renderMap() {
+      L.imageOverlay('/static/map_data/world_terrain.jpg', [[-85.05112878, -180], [85.05112878, 180]], {
+        interactive: false
+      }).addTo(map);
 
-    correctShapes.forEach(shape => L.geoJSON(shape, { style: correctStyle }).addTo(map));
-    wrongShapes.forEach(shape => L.geoJSON(shape, { style: wrongStyle }).addTo(map));
+      try {
+        const [worldResponse, labelsResponse] = await Promise.all([
+          fetch('/static/map_data/border_outlines.geojson'),
+          fetch('/static/map_data/world_labels.geojson')
+        ]);
+        if (!worldResponse.ok || !labelsResponse.ok) throw new Error('Could not load local map data');
+        const [worldMap, labels] = await Promise.all([worldResponse.json(), labelsResponse.json()]);
+        L.geoJSON(worldMap, {
+          style: {
+            color: '#89958c',
+            weight: 0.55,
+            fillColor: '#ffffff',
+            fillOpacity: 0.06
+          }
+        }).addTo(map);
+        const labelLayer = L.geoJSON(labels, {
+          interactive: false,
+          pointToLayer: (feature, latlng) => L.marker(latlng, {
+            icon: L.divIcon({ className: 'offline-map-label-anchor', iconSize: [0, 0] })
+          }),
+          onEachFeature: (feature, layer) => {
+            layer.bindTooltip(feature.properties.name, {
+              permanent: true,
+              direction: 'center',
+              className: 'offline-map-country-label',
+              opacity: 1
+            });
+          }
+        }).addTo(map);
+        map.on('zoomend', () => {
+          const showLabels = map.getZoom() >= 3;
+          labelLayer.eachLayer(layer => {
+            const tooltip = layer.getTooltip();
+            if (!tooltip) return;
+            const element = tooltip.getElement();
+            if (element) element.style.display = showLabels ? '' : 'none';
+          });
+        });
+      } catch (error) {
+        console.warn('[MAP] Could not load local map layers', error);
+      }
+
+      const mainLayer = L.geoJSON(mainCountry, { style: mainStyle }).addTo(map);
+      map.fitBounds(mainLayer.getBounds());
+      map.setZoom(map.getZoom() - 1);
+      map.fire('zoomend');
+
+      correctShapes.forEach(shape => L.geoJSON(shape, { style: correctStyle }).addTo(map));
+      wrongShapes.forEach(shape => L.geoJSON(shape, { style: wrongStyle }).addTo(map));
+    }
+
+    renderMap();
   };
 
   function updateUserStats(stats) {

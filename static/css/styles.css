@@ -242,3 +242,24 @@ html, body {
   align-items: center;
   gap: 10px;
 }
+
+.offline-map-label-anchor {
+  display: none;
+}
+
+.offline-map-country-label {
+  background: rgba(255, 255, 255, 0.78);
+  border: 0;
+  border-radius: 2px;
+  box-shadow: none;
+  color: #26343c;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+
+.offline-map-country-label::before {
+  display: none;
+}

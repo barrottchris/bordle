@@ -103,6 +103,47 @@ class TestGameRoute:
             )
         assert resp.status_code == 200
 
+    @pytest.mark.parametrize(
+        ("state_overrides", "map_id"),
+        [
+            ({"attempts_left": 0}, "failureMap"),
+            ({"correct_count": len(TEST_BORDERS)}, "victoryMap"),
+        ],
+    )
+    def test_end_game_maps_use_local_basemap(self, client, app, state_overrides, map_id):
+        _seed_session(client)
+        with (
+            patch("app.get_game_state", return_value=make_response_state(**state_overrides)),
+            patch("app.get_games_today_stats", return_value=(10, 75)),
+            patch("app.get_total_games_count", return_value=100),
+            patch("app.analytics", return_value={}),
+            patch("app.iso_map", {}),
+            patch("app.get_or_create_player_uid", return_value=(TEST_PLAYER_UID, False)),
+        ):
+            response = client.get(
+                "/game",
+                headers={"Cookie": f"player_uid={TEST_PLAYER_UID}"},
+            )
+
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert f'id="{map_id}"' in html
+        assert "/static/map_data/world_terrain.jpg" in html
+        assert "/static/map_data/world_labels.geojson" in html
+        assert "api.maptiler.com" not in html
+
+    def test_local_basemap_assets_are_served(self, client):
+        terrain = client.get("/static/map_data/world_terrain.jpg")
+        labels = client.get("/static/map_data/world_labels.geojson")
+
+        assert terrain.status_code == 200
+        assert terrain.mimetype == "image/jpeg"
+        assert labels.status_code == 200
+        label_data = labels.get_json()
+        assert label_data["type"] == "FeatureCollection"
+        assert label_data["features"]
+        assert {feature["properties"]["kind"] for feature in label_data["features"]} == {"country"}
+
 
 # ── /submit ────────────────────────────────────────────────────────────────────
 
