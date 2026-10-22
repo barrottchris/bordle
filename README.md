@@ -9,7 +9,7 @@
 ## 🎮 Features
 
 - Interactive daily geography challenge
-- Random UN-recognized country each day (out of 195)
+- Follows the UN-recognized country list, with Kosovo and French Guiana included as exceptions to avoid obvious gaps in the map
 - Guess bordering countries with dropdown assistance
 - Visual map feedback for correct and incorrect guesses
 - Hard mode that hides the name of the main country
@@ -55,12 +55,20 @@ Edit
 flask run
 Then navigate to http://127.0.0.1:5000 in your browser.
 
+### Deployment startup
+
+The app reapplies the Crimea and French Guiana map exceptions automatically before importing services that cache map data, so the existing Render `gunicorn app:app` start command also works. Alternatively, configure the start command as `sh scripts/start_app.sh` to run the generation step explicitly before Gunicorn. Both approaches use the committed GeoJSON files, do not require the ignored Natural Earth shapefile download, and leave already-current map files untouched.
+
+### Offline end-game basemap
+
+The win/loss maps use a locally served Natural Earth 1:50m shaded-relief image, country boundaries, and country-name labels. City labels are intentionally omitted to keep the map readable. The generated files in `static/map_data/` are served by Bordle; players' browsers do not request map tiles from a third-party provider. To rebuild them, download Natural Earth's `SR_50M.zip` from `https://naturalearth.s3.amazonaws.com/50m_raster/SR_50M.zip`, extract its contents into `data/map_source/`, then run `python scripts/build_offline_basemap.py`. Source data is public domain; see [Natural Earth's terms](https://www.naturalearthdata.com/about/terms-of-use/).
+
 🗺️ Data Sources
 Country outlines are sourced from Natural Earth.
 
 Border data is computed from spatial overlaps using GeoPandas.
 
-Only UN-recognized countries are included (195 total).
+The map follows the UN-recognized country list, with Kosovo and French Guiana included as exceptions to avoid obvious gaps.
 
 ---
 
@@ -117,5 +125,11 @@ GeoPandas and Shapely for spatial analysis.
 Leaflet.js for interactive mapping.
 
 Inspired by Wordle.
+
+## Database Backups
+
+Daily Postgres backups are configured via GitHub Actions.
+
+See `docs/POSTGRES_BACKUPS.md` for setup, secrets, retention, and restore instructions.
 
 

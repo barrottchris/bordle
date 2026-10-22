@@ -334,10 +334,22 @@ def get_total_games_count() -> int:
     return _to_int(row.get("total_games")) or 0
 
 
-def get_leaderboard_data() -> Dict[str, list[Dict[str, object]]]:
+def get_leaderboard_data(limit: Optional[int] = 300) -> Dict[str, list[Dict[str, object]]]:
     today = _today_uk_date().isoformat()
-    daily_rows = fetch_all(get_select_daily_leaderboard_query(), (today,), log_errors=False)
-    all_time_rows = fetch_all(get_select_all_time_leaderboard_query(), log_errors=False)
+
+    daily_query = get_select_daily_leaderboard_query()
+    daily_args: tuple = (today,)
+    if limit is not None:
+        daily_query = f"{daily_query} LIMIT %s"
+        daily_args = (today, int(limit))
+    daily_rows = fetch_all(daily_query, daily_args, log_errors=False)
+
+    all_time_query = get_select_all_time_leaderboard_query()
+    all_time_args: tuple = ()
+    if limit is not None:
+        all_time_query = f"{all_time_query} LIMIT %s"
+        all_time_args = (int(limit),)
+    all_time_rows = fetch_all(all_time_query, all_time_args, log_errors=False)
 
     def _format_rows(rows):
         return [

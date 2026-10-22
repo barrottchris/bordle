@@ -1,19 +1,23 @@
 import json
+import sys
+from pathlib import Path
 
-from services.data_loader import (
-    add_sea_borders,
-    build_border_map,
-    load_countries,
-    load_eez_data,
-    load_sea_zones,
-)
+ROOT = Path(__file__).resolve().parents[1]
 
-# Load GeoJSONs
-countries = load_countries()
-# eez = load_eez_data(countries)
-# seas = load_sea_zones(eez)
-border_map = build_border_map(countries)
-# border_map = add_sea_borders(border_map, countries, seas)
 
-with open("data/border_map.json", "w") as f:
-    json.dump(border_map, f, indent=2)
+def main():
+    sys.path.insert(0, str(ROOT))
+    from services.data_loader import build_border_map, load_countries
+    from services.map_exceptions import add_french_guiana_borders
+
+    countries = load_countries()
+    border_map = build_border_map(countries)
+    add_french_guiana_borders(border_map)
+
+    output_path = ROOT / "static/map_data/border_map.json"
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(border_map, f, indent=2)
+
+
+if __name__ == "__main__":
+    main()

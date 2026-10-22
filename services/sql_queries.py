@@ -150,7 +150,6 @@ WHERE game_date::date = %s::date
 GROUP BY country
 HAVING SUM(plays) > 0
 ORDER BY success_rate DESC, total_plays DESC
-LIMIT 20
 """
 
 
@@ -170,7 +169,6 @@ FROM {table_name}
 GROUP BY country
 HAVING SUM(plays) > 0
 ORDER BY success_rate DESC, total_plays DESC
-LIMIT 100
 """
 
 

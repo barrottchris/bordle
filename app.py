@@ -17,6 +17,11 @@ from flask import (
     url_for,
     session,
 )
+from scripts.map_data_bootstrap import MAP_DATA_READY
+
+if not MAP_DATA_READY:
+    raise RuntimeError("Map data preparation did not complete before app startup")
+
 from services.game_cache import daily_game_cache
 from services.game_db_logic import (
     get_games_today_stats,
@@ -335,8 +340,18 @@ def reset_session():
 
 @app.route("/leaderboard_data")
 def leaderboard_data():
+    raw_limit = request.args.get("limit", "300")
+    normalized = str(raw_limit).strip().lower() if raw_limit is not None else ""
+    if normalized in {"", "all", "null"}:
+        limit = 300
+    else:
+        try:
+            limit = max(1, int(raw_limit))
+        except ValueError:
+            limit = 300
+
     try:
-        data = get_leaderboard_data()
+        data = get_leaderboard_data(limit)
         return jsonify(data)
     except Exception as e:
         logger.warning(f"Error loading leaderboard data: {e}")
@@ -345,7 +360,16 @@ def leaderboard_data():
 
 @app.route("/api/leaderboard")
 def leaderboard_api():
-    return jsonify(get_leaderboard_data())
+    raw_limit = request.args.get("limit", "300")
+    normalized = str(raw_limit).strip().lower() if raw_limit is not None else ""
+    if normalized in {"", "all", "null"}:
+        limit = 300
+    else:
+        try:
+            limit = max(1, int(raw_limit))
+        except ValueError:
+            limit = 300
+    return jsonify(get_leaderboard_data(limit))
 
 
 @app.route("/sitemap.xml")
