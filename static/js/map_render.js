@@ -8,8 +8,12 @@ document.addEventListener("DOMContentLoaded", () => {
     attributionControl: false,
   });
 
-  // White background instead of tiles
-  document.getElementById("map").style.background = "#ffffff";
+  const mapElement = document.getElementById("map");
+  mapElement.style.backgroundColor = "#ffffff";
+
+  // Keep land polygons below Leaflet's normal overlay pane (game shapes).
+  const landPane = map.createPane("landPane");
+  landPane.style.zIndex = "350";
 
   // Helper function to add GeoJSON layers with a specific color
   function addLayer(shape, color) {
@@ -26,14 +30,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Optionally load global border outlines (no fill)
   function addBorderOutlines(url) {
-    // Fetch and render a single GeoJSON outlines file from the static folder
+    // The same GeoJSON supplies land silhouettes and country border outlines.
     fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error('Failed to load border outlines');
         return r.json();
       })
       .then((geo) => {
-        L.geoJSON(geo, { style: { color: '#888', weight: 1, fillOpacity: 0 } }).addTo(map);
+        mapElement.style.backgroundColor = "#b9def2";
+        L.geoJSON(geo, {
+          pane: "landPane",
+          interactive: false,
+          style: {
+            stroke: false,
+            fill: true,
+            fillColor: "#ffffff",
+            fillOpacity: 1,
+          },
+        }).addTo(map);
+        L.geoJSON(geo, {
+          style: { color: "#888", weight: 1, fill: false },
+        }).addTo(map);
       })
       .catch(() => {});
   }
