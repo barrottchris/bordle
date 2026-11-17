@@ -187,7 +187,7 @@
     });
   }
 
-  async function toggleLeaderboard(tableKey, event) {
+  async function toggleLeaderboardTable(tableKey, event) {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -200,7 +200,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".toggle-full-leaderboard").forEach((button) => {
-      button.addEventListener("click", (event) => toggleLeaderboard(button.dataset.leaderboardTable, event));
+      button.addEventListener("click", (event) => toggleLeaderboardTable(button.dataset.leaderboardTable, event));
     });
     updateLeaderboardToggleButtons();
   });
