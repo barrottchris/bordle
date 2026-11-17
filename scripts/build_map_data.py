@@ -17,9 +17,22 @@ def main():
     sys.path.insert(0, str(ROOT))
     from scripts.add_french_guiana import main as add_french_guiana
     from scripts.assign_crimea_to_ukraine import main as assign_crimea_to_ukraine
+    from services.map_exceptions import add_palestine_and_western_sahara_borders
 
     assign_crimea_to_ukraine()
     add_french_guiana()
+
+    border_map_path = ROOT / "static/map_data/border_map.json"
+    borders = json.loads(border_map_path.read_text(encoding="utf-8"))
+    if add_palestine_and_western_sahara_borders(borders):
+        border_map_path.write_text(json.dumps(borders, indent=2) + "\n", encoding="utf-8")
+
+    dropdown_path = ROOT / "static/map_data/country_drop_down.json"
+    dropdown = json.loads(dropdown_path.read_text(encoding="utf-8"))
+    for region in ("Palestine", "Western Sahara"):
+        if region not in dropdown:
+            dropdown.append(region)
+    dropdown_path.write_text(json.dumps(dropdown, indent=2) + "\n", encoding="utf-8")
 
     shapes_path = ROOT / "data/countries_shapes.json"
     shapes = json.loads(shapes_path.read_text(encoding="utf-8"))
@@ -45,8 +58,15 @@ def main():
         raise RuntimeError("Map check failed: French Guiana is missing from the dropdown")
     if borders.get("French Guiana") != ["Brazil", "Suriname"]:
         raise RuntimeError("Map check failed: French Guiana neighbors are incorrect")
+    if borders.get("Palestine") != ["Egypt", "Israel", "Jordan"]:
+        raise RuntimeError("Map check failed: Palestine neighbors are incorrect")
+    if borders.get("Western Sahara") != ["Algeria", "Mauritania", "Morocco"]:
+        raise RuntimeError("Map check failed: Western Sahara neighbors are incorrect")
+    for region in ("Palestine", "Western Sahara"):
+        if region not in dropdown:
+            raise RuntimeError(f"Map check failed: {region} is missing from the dropdown")
 
-    print("Map checks passed: Crimea is Ukrainian; French Guiana is selectable and mapped.")
+    print("Map checks passed: Crimea, French Guiana, Palestine, and Western Sahara are mapped.")
     return True
 
 

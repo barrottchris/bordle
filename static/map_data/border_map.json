@@ -19,7 +19,8 @@
     "Mauritania",
     "Morocco",
     "Niger",
-    "Tunisia"
+    "Tunisia",
+    "Western Sahara"
   ],
   "Andorra": [
     "France",
@@ -251,6 +252,7 @@
   "Egypt": [
     "Israel",
     "Libya",
+    "Palestine",
     "Sudan"
   ],
   "El Salvador": [
@@ -409,6 +411,7 @@
     "Egypt",
     "Jordan",
     "Lebanon",
+    "Palestine",
     "Syria"
   ],
   "Italy": [
@@ -429,6 +432,7 @@
   "Jordan": [
     "Iraq",
     "Israel",
+    "Palestine",
     "Saudi Arabia",
     "Syria"
   ],
@@ -526,7 +530,8 @@
   "Mauritania": [
     "Algeria",
     "Mali",
-    "Senegal"
+    "Senegal",
+    "Western Sahara"
   ],
   "Mexico": [
     "Belize",
@@ -552,7 +557,8 @@
     "Serbia"
   ],
   "Morocco": [
-    "Algeria"
+    "Algeria",
+    "Western Sahara"
   ],
   "Mozambique": [
     "Malawi",
@@ -934,5 +940,15 @@
   "French Guiana": [
     "Brazil",
     "Suriname"
+  ],
+  "Palestine": [
+    "Egypt",
+    "Israel",
+    "Jordan"
+  ],
+  "Western Sahara": [
+    "Algeria",
+    "Mauritania",
+    "Morocco"
   ]
 }

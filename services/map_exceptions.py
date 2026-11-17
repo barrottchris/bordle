@@ -5,6 +5,8 @@ from shapely.geometry import MultiPolygon, box
 
 FRENCH_GUIANA_SEARCH_AREA = box(-56.0, 1.0, -50.0, 7.0)
 FRENCH_GUIANA_AREA_RANGE = (5.0, 8.5)
+PALESTINE_BORDERS = ("Egypt", "Israel", "Jordan")
+WESTERN_SAHARA_BORDERS = ("Algeria", "Mauritania", "Morocco")
 
 
 def split_french_guiana(geometry, *, required=False):
@@ -62,4 +64,34 @@ def add_french_guiana_borders(border_map):
         if border_map[country] != updated_neighbors:
             border_map[country] = updated_neighbors
             changed = True
+    return changed
+
+
+def add_palestine_and_western_sahara_borders(border_map):
+    """Add land borders for Palestine and Western Sahara symmetrically."""
+    regions = {
+        "Palestine": PALESTINE_BORDERS,
+        "Western Sahara": WESTERN_SAHARA_BORDERS,
+    }
+    missing = sorted(
+        {
+            neighbor
+            for neighbors in regions.values()
+            for neighbor in neighbors
+            if neighbor not in border_map
+        }
+    )
+    if missing:
+        raise ValueError(f"Missing map neighbor(s): {missing}")
+
+    changed = False
+    for region, neighbors in regions.items():
+        if border_map.get(region) != list(neighbors):
+            border_map[region] = list(neighbors)
+            changed = True
+        for neighbor in neighbors:
+            updated_neighbors = sorted(set(border_map[neighbor]) | {region})
+            if border_map[neighbor] != updated_neighbors:
+                border_map[neighbor] = updated_neighbors
+                changed = True
     return changed
