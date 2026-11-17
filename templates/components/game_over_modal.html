@@ -121,6 +121,11 @@
     const mainCountry = {{ country_geojson | tojson }};
     const correctShapes = {{ correct_shapes | tojson }};
     const wrongShapes = {{ wrong_shapes | tojson }};
+    const countryName = {{ country_name | tojson }};
+    const correctGuesses = {{ correct_guesses | tojson }};
+    const wrongGuesses = {{ wrong_guesses | tojson }};
+    const allCorrect = {{ all_correct | tojson }};
+    const labelsToShow = new Set([countryName, ...correctGuesses, ...wrongGuesses, ...allCorrect]);
 
     const mainStyle = { color: "black", weight: 2, fillOpacity: 0.7 };
     const correctStyle = { color: "green", weight: 1, fillOpacity: 0.5 };
@@ -146,7 +151,10 @@
             fillOpacity: 0.06
           }
         }).addTo(map);
-        const labelLayer = L.geoJSON(labels, {
+        L.geoJSON({
+          ...labels,
+          features: labels.features.filter(feature => labelsToShow.has(feature.properties.name))
+        }, {
           interactive: false,
           pointToLayer: (feature, latlng) => L.marker(latlng, {
             icon: L.divIcon({ className: 'offline-map-label-anchor', iconSize: [0, 0] })
@@ -160,15 +168,6 @@
             });
           }
         }).addTo(map);
-        map.on('zoomend', () => {
-          const showLabels = map.getZoom() >= 3;
-          labelLayer.eachLayer(layer => {
-            const tooltip = layer.getTooltip();
-            if (!tooltip) return;
-            const element = tooltip.getElement();
-            if (element) element.style.display = showLabels ? '' : 'none';
-          });
-        });
       } catch (error) {
         console.warn('[MAP] Could not load local map layers', error);
       }
@@ -176,7 +175,6 @@
       const mainLayer = L.geoJSON(mainCountry, { style: mainStyle }).addTo(map);
       map.fitBounds(mainLayer.getBounds());
       map.setZoom(map.getZoom() - 1);
-      map.fire('zoomend');
 
       correctShapes.forEach(shape => L.geoJSON(shape, { style: correctStyle }).addTo(map));
       wrongShapes.forEach(shape => L.geoJSON(shape, { style: wrongStyle }).addTo(map));

@@ -130,6 +130,8 @@ class TestGameRoute:
         assert f'id="{map_id}"' in html
         assert "/static/map_data/world_terrain.jpg" in html
         assert "/static/map_data/world_labels.geojson" in html
+        assert "new Set([countryName, ...correctGuesses, ...wrongGuesses, ...allCorrect])" in html
+        assert "labels.features.filter(feature => labelsToShow.has(feature.properties.name))" in html
         assert "api.maptiler.com" not in html
 
     def test_local_basemap_assets_are_served(self, client):
