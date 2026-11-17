@@ -1,5 +1,8 @@
+name: bordle
+
 services:
   bordle:
+    image: bordle:4.2.0
     build:
       context: ..
       dockerfile: packaging/Dockerfile

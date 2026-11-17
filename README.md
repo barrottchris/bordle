@@ -61,7 +61,7 @@ The app reapplies the Crimea and French Guiana map exceptions automatically befo
 
 ### Run the app in Docker
 
-The Docker Compose setup in `packaging/` runs the Bordle app only; it continues to use an externally hosted PostgreSQL database.
+The Docker Compose setup in `packaging/` runs the Bordle app only; it continues to use an externally hosted PostgreSQL database. The Compose project is named `bordle`, and the image is tagged `bordle:4.2.0` to match the current app version.
 
 1. Copy `packaging/.env.docker.example` to `packaging/.env.docker`:
 
