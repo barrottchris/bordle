@@ -1,5 +1,6 @@
 .env
 .gitignore
+packaging/.env.docker
 data/ne_10m_admin_0_countries.zip
 data/ne_10m_admin_0_countries/*
 db/games_old.db

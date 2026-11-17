@@ -1,0 +1,14 @@
+.git
+.venv
+venv
+__pycache__
+**/__pycache__
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+.env
+.env.*
+packaging/.env.docker
+data/map_source
+data/ne_10m_admin_0_countries.zip

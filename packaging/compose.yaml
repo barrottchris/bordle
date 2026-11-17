@@ -1,0 +1,10 @@
+services:
+  bordle:
+    build:
+      context: ..
+      dockerfile: packaging/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    ports:
+      - "127.0.0.1:8000:8000"

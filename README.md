@@ -59,6 +59,27 @@ Then navigate to http://127.0.0.1:5000 in your browser.
 
 The app reapplies the Crimea and French Guiana map exceptions automatically before importing services that cache map data, so the existing Render `gunicorn app:app` start command also works. Alternatively, configure the start command as `sh scripts/start_app.sh` to run the generation step explicitly before Gunicorn. Both approaches use the committed GeoJSON files, do not require the ignored Natural Earth shapefile download, and leave already-current map files untouched.
 
+### Run the app in Docker
+
+The Docker Compose setup in `packaging/` runs the Bordle app only; it continues to use an externally hosted PostgreSQL database.
+
+1. Copy `packaging/.env.docker.example` to `packaging/.env.docker`:
+
+   ```powershell
+   Copy-Item packaging\.env.docker.example packaging\.env.docker
+   ```
+
+2. Set `FLASK_SECRET_KEY` and `DATABASE_URL_EXTERNAL` in `packaging/.env.docker`. Use a database URL reachable from the Docker host; a Render internal URL will not work from a home PC.
+3. Build and start the app:
+
+   ```powershell
+   docker compose -f packaging/compose.yaml up --build -d
+   ```
+
+4. Open `http://localhost:8000`. View the app logs with `docker compose -f packaging/compose.yaml logs -f bordle`, and stop it with `docker compose -f packaging/compose.yaml down`.
+
+Keep `FLASK_ENV=production` so Bordle uses the production table names. Do not copy Render's internal or PgBouncer URL variables into `packaging/.env.docker`; the database connector gives those variables precedence over `DATABASE_URL_EXTERNAL`. The app port is bound to the local machine only, ready for a Cloudflare Tunnel running on the host.
+
 ### Offline end-game basemap
 
 The win/loss maps use a locally served Natural Earth 1:50m shaded-relief image, country boundaries, and country-name labels. City labels are intentionally omitted to keep the map readable. The generated files in `static/map_data/` are served by Bordle; players' browsers do not request map tiles from a third-party provider. To rebuild them, download Natural Earth's `SR_50M.zip` from `https://naturalearth.s3.amazonaws.com/50m_raster/SR_50M.zip`, extract its contents into `data/map_source/`, then run `python scripts/build_offline_basemap.py`. Source data is public domain; see [Natural Earth's terms](https://www.naturalearthdata.com/about/terms-of-use/).
