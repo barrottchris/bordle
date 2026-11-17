@@ -1,32 +1,40 @@
-import geopandas as gpd
-from shapely.geometry import MultiPolygon, Polygon
+import sys
+from pathlib import Path
 
-# Load the original GeoJSON
-gdf = gpd.read_file("data/countries_shapes.json")
+ROOT = Path(__file__).resolve().parents[1]
 
-# Identify France by name
-france_row = gdf[gdf["name"] == "France"].copy()
 
-# Access its geometry
-france_geom = france_row.iloc[0].geometry
+def main():
+    sys.path.insert(0, str(ROOT))
+    import geopandas as gpd
+    from shapely.geometry import MultiPolygon
 
-# If it's a MultiPolygon (usually the case)
-if isinstance(france_geom, MultiPolygon):
-    # Keep only polygons roughly in Europe (Metropolitan France)
-    # This removes French Guiana, Réunion, etc.
-    mainland_polys = [
-        poly for poly in france_geom.geoms
-        if -10 < poly.centroid.x < 10 and 35 < poly.centroid.y < 55
-    ]
+    from scripts.add_french_guiana import main as add_french_guiana
 
-    # Replace geometry with filtered MultiPolygon
-    france_row.iloc[0].geometry = MultiPolygon(mainland_polys)
+    shapes_path = ROOT / "data/countries_shapes.json"
+    gdf = gpd.read_file(shapes_path)
+    france_rows = gdf[gdf["name"] == "France"]
+    if len(france_rows) != 1:
+        raise ValueError(f"Expected one France feature, found {len(france_rows)}")
 
-    # Update the full GeoDataFrame
-    gdf.loc[gdf["name"] == "France", "geometry"] = france_row.iloc[0].geometry
+    france_index = france_rows.index[0]
+    france_geometry = france_rows.iloc[0].geometry
+    if france_geometry.geom_type == "MultiPolygon":
+        mainland_polygons = [
+            polygon
+            for polygon in france_geometry.geoms
+            if -10 < polygon.centroid.x < 10 and 35 < polygon.centroid.y < 55
+        ]
+        if not mainland_polygons:
+            raise ValueError("No Metropolitan France polygon found")
+        gdf.at[france_index, "geometry"] = MultiPolygon(mainland_polygons)
+    elif france_geometry.geom_type != "Polygon":
+        raise ValueError(f"Unexpected France geometry: {france_geometry.geom_type}")
 
-    # Save to new file
-    gdf.to_file("countries_shapes.json", driver="GeoJSON")
-    print("✅ Saved filtered Metropolitan France only.")
-else:
-    print("❌ France geometry is not a MultiPolygon — unexpected format.")
+    gdf.to_file(shapes_path, driver="GeoJSON")
+    add_french_guiana()
+    print("Saved Metropolitan France and separate French Guiana feature.")
+
+
+if __name__ == "__main__":
+    main()
