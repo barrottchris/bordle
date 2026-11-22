@@ -21,14 +21,6 @@ body {
   box-sizing: border-box;
 }
 
-/* Make SVG or canvas maps responsive */
-svg, canvas {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto;
-}
-
 /* Mobile-specific tweaks */
 @media (max-width: 768px) {
   .game-info, .dropdown, .guess-log {
@@ -241,4 +233,25 @@ html, body {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.offline-map-label-anchor {
+  display: none;
+}
+
+.offline-map-country-label {
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  box-shadow: none;
+  color: #26343c;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+
+.offline-map-country-label::before {
+  display: none;
 }
