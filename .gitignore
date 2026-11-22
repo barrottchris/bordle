@@ -15,3 +15,4 @@ db/games_pre_stats.db
 __pycache__/app.cpython-311.pyc
 tests/__pycache__/*
 data/map_source/
+packaging/.env.docker

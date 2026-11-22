@@ -9,7 +9,7 @@
 ## 🎮 Features
 
 - Interactive daily geography challenge
-- Follows the UN-recognized country list, with Kosovo and French Guiana included as exceptions to avoid obvious gaps in the map
+- Starts with sovereign countries and also includes selected separately mapped places: Kosovo, French Guiana, Palestine, and Western Sahara
 - Guess bordering countries with dropdown assistance
 - Visual map feedback for correct and incorrect guesses
 - Hard mode that hides the name of the main country
@@ -68,7 +68,7 @@ Country outlines are sourced from Natural Earth.
 
 Border data is computed from spatial overlaps using GeoPandas.
 
-The map follows the UN-recognized country list, with Kosovo and French Guiana included as exceptions to avoid obvious gaps.
+The playable list starts with sovereign countries and includes selected additional places as separate entries when they have their own map shape and border data: Kosovo, French Guiana, Palestine, and Western Sahara. A playable entry is a game/map label, not a judgment about sovereignty or international recognition. Bordle counts land borders represented in its map data; most overseas territories are not separate entries, with French Guiana as a deliberate exception.
 
 ---
 
