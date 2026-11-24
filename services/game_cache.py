@@ -46,9 +46,14 @@ class DailyGameCache:
         try:
             country_info = get_country_of_the_day(today)
             game_number = get_current_game_number()
+            if country_info is None or game_number is None:
+                logger.error(
+                    f"[DAILY_CACHE] Refresh returned incomplete database state for date={today}"
+                )
+                return
             with self._lock:
                 self._date = today
-                self._game_number = game_number if game_number is not None else 0
+                self._game_number = game_number
                 self._country_info = country_info
             logger.info(
                 f"[DAILY_CACHE] Refreshed: date={today}, "

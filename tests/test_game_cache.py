@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import patch
 
 from services.game_cache import DailyGameCache
@@ -27,4 +28,22 @@ def test_refresh_gets_country_before_counting_game_number():
         ("game_number", None),
     ]
     assert cache._game_number == 294
+    assert cache._country_info == {"country_code": None, "country_name": "Togo"}
+
+
+def test_refresh_preserves_cached_values_when_database_returns_incomplete_state():
+    cache = DailyGameCache()
+    cache._date = date(2026, 3, 25)
+    cache._game_number = 293
+    cache._country_info = {"country_code": None, "country_name": "Togo"}
+
+    with (
+        patch.object(cache, "_today_uk_date", return_value=date(2026, 3, 26)),
+        patch("services.game_cache.get_country_of_the_day", return_value=None),
+        patch("services.game_cache.get_current_game_number", return_value=None),
+    ):
+        cache.refresh()
+
+    assert cache._date == date(2026, 3, 25)
+    assert cache._game_number == 293
     assert cache._country_info == {"country_code": None, "country_name": "Togo"}
