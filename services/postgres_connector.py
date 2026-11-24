@@ -2,6 +2,7 @@ from contextlib import contextmanager
 
 import os
 import json
+import re
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 import psycopg2
@@ -109,6 +110,33 @@ def _is_write_query(query: str) -> bool:
     return first_token[0] in {"INSERT", "UPDATE", "DELETE", "CREATE", "DROP", "ALTER", "TRUNCATE"}
 
 
+def _is_retryable_read_query(query: str) -> bool:
+    normalized_query = (query or "").lstrip()
+    if not normalized_query.upper().startswith("SELECT"):
+        return False
+    return re.search(
+        r"\b(?:setval|nextval|set_config|pg_advisory_[a-z_]+)\s*\(",
+        normalized_query,
+        re.IGNORECASE,
+    ) is None
+
+
+def _execute_with_read_retry(query: str, execute):
+    try:
+        return execute()
+    except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+        if not _is_retryable_read_query(query):
+            raise
+        _log_event(
+            "info",
+            "postgres_read_query_retry",
+            query=query,
+            error=str(e),
+            attempt=2,
+        )
+        return execute()
+
+
 def _get_or_create_pool():
     global _connection_pool, _pool_params_key
 
@@ -186,22 +214,28 @@ def get_connection():
         )
         raise
 
+    discard_connection = False
     try:
         yield conn
-    except Exception:
+    except Exception as query_error:
         if conn is not None:
-            try:
-                conn.rollback()
-            except Exception as e:
-                _log_event("error", "postgres_connection_rollback_failure", error=str(e))
+            discard_connection = conn.closed or isinstance(
+                query_error,
+                (psycopg2.OperationalError, psycopg2.InterfaceError),
+            )
+            if not conn.closed:
+                try:
+                    conn.rollback()
+                except Exception as e:
+                    discard_connection = True
+                    _log_event("error", "postgres_connection_rollback_failure", error=str(e))
+        else:
+            discard_connection = False
         raise
     finally:
         if conn is not None:
             try:
-                if conn.closed:
-                    pool.putconn(conn, close=True)
-                else:
-                    pool.putconn(conn)
+                pool.putconn(conn, close=discard_connection or conn.closed)
                 if _debug_pool_logging:
                     _log_event("info", "postgres_pool_release", duration=_elapsed_seconds(start_time))
             except Exception as e:
@@ -213,7 +247,8 @@ def fetch_one(query: str, params=None, log_errors: bool = True):
     params = params or ()
     start_time = time.time()
     is_write_query = _is_write_query(query)
-    try:
+
+    def _execute():
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(query, params)
@@ -226,6 +261,10 @@ def fetch_one(query: str, params=None, log_errors: bool = True):
                 conn.commit()
             else:
                 conn.rollback()
+        return row
+
+    try:
+        row = _execute_with_read_retry(query, _execute)
         _log_event(
             "info",
             "postgres_query_success",
@@ -289,12 +328,17 @@ def fetch_all(query: str, params=None, log_errors: bool = True):
     """Execute a query and return all rows as a list of dicts, with logging and timing."""
     params = params or ()
     start_time = time.time()
-    try:
+
+    def _execute():
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(query, params)
                 rows = cur.fetchall()
             conn.rollback()
+        return rows
+
+    try:
+        rows = _execute_with_read_retry(query, _execute)
         _log_event(
             "info",
             "postgres_query_many_success",
